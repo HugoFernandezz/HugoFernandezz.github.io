@@ -1820,6 +1820,48 @@ function Skills({ tweaks, onOpenCert }) {
 
 }
 
+function ContactEmail({ email }) {
+  const [copied, setCopied] = React.useState(false);
+  const timerRef = useRef(null);
+
+  const handleClick = (e) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(email).then(() => {
+        setCopied(true);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {});
+    }
+    // Intentamos abrir Gmail compose en una pestaña nueva como fallback fiable
+    // (mailto: no hace nada si el sistema no tiene cliente de correo asociado).
+    const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`;
+    window.open(gmail, "_blank", "noopener,noreferrer");
+    e.preventDefault();
+  };
+
+  return (
+    <div className="mt-8 md:mt-10 flex flex-wrap items-center gap-3">
+      <a
+        href={`mailto:${email}`}
+        onClick={handleClick}
+        className="inline-flex items-center gap-2 text-[18px] md:text-[20px] link-quiet"
+        style={{ color: "var(--ink)" }}>
+        {email}
+        <Icon name="arrow-up-right" size={18} strokeWidth={1.5} />
+      </a>
+      <span
+        aria-live="polite"
+        className="text-[12px] tracking-[0.12em] uppercase transition-opacity duration-300"
+        style={{
+          color: "var(--ink-3)",
+          opacity: copied ? 1 : 0
+        }}>
+        Copiado
+      </span>
+    </div>);
+
+}
+
 function Footer({ tweaks }) {
   const accent = ACCENTS[tweaks.accent];
   return (
@@ -1837,14 +1879,7 @@ function Footer({ tweaks }) {
           <br className="hidden md:block" /> <span style={{ color: "var(--ink-2)" }}>Si crees que podemos cruzarnos en algo, escríbeme.</span>
         </h2>
 
-        <a
-            href="mailto:hugofernandezgil17@gmail.com"
-            className="inline-flex items-center gap-2 mt-8 md:mt-10 text-[18px] md:text-[20px] link-quiet"
-            style={{ color: "var(--ink)" }}>
-          
-          Hugofernandezgil17@gmail.com
-          <Icon name="arrow-up-right" size={18} strokeWidth={1.5} />
-        </a>
+        <ContactEmail email="hugofernandezgil17@gmail.com" />
         </Reveal>
 
         {/* Bottom bar */}
