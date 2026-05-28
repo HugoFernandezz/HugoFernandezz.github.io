@@ -359,7 +359,7 @@ const PROJECTS = [
       {
         heading: "El flujo de datos",
         items: [
-          "01 — Un bot en Python rasca a diario las webs y redes de las salas de Murcia",
+          "01 — Un bot en Python scrapea a diario las webs y redes de las salas de Murcia",
           "02 — Normaliza cada evento al mismo formato: fecha, sala, precio, estado de entradas, transporte",
           "03 — Lo sube a Firebase como un único JSON canónico",
           "04 — La app descarga ese JSON, lo cachea, y lo pinta en una agenda agrupada por fechas",
