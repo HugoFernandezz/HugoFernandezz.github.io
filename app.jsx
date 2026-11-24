@@ -95,6 +95,8 @@ function StoreButtons({ store, size = "sm" }) {
   const labelSize = isLg ? "text-[14px]" : "text-[12.5px]";
   const eyebrowSize = isLg ? "text-[10px]" : "text-[9px]";
   const iconSize = isLg ? 18 : 15;
+  const t = useT();
+  const tryIt = t("Pruébala en", "Get it on");
   return (
     <div className="flex flex-wrap gap-2">
       {store.ios && (
@@ -104,11 +106,11 @@ function StoreButtons({ store, size = "sm" }) {
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           className={`store-btn ${px} ${py}`}
-          aria-label="Pruébala en App Store"
+          aria-label={`${tryIt} App Store`}
         >
           <AppleIcon size={iconSize} />
           <span className="flex flex-col leading-tight items-start">
-            <span className={`${eyebrowSize} font-mono uppercase tracking-[0.1em] opacity-60`}>Pruébala en</span>
+            <span className={`${eyebrowSize} font-mono uppercase tracking-[0.1em] opacity-60`}>{tryIt}</span>
             <span className={`${labelSize} font-medium tracking-[-0.01em]`}>App Store</span>
           </span>
         </a>
@@ -120,11 +122,11 @@ function StoreButtons({ store, size = "sm" }) {
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           className={`store-btn ${px} ${py}`}
-          aria-label="Pruébala en Google Play"
+          aria-label={`${tryIt} Google Play`}
         >
           <PlayStoreIcon size={iconSize} />
           <span className="flex flex-col leading-tight items-start">
-            <span className={`${eyebrowSize} font-mono uppercase tracking-[0.1em] opacity-60`}>Pruébala en</span>
+            <span className={`${eyebrowSize} font-mono uppercase tracking-[0.1em] opacity-60`}>{tryIt}</span>
             <span className={`${labelSize} font-medium tracking-[-0.01em]`}>Google Play</span>
           </span>
         </a>
@@ -167,12 +169,47 @@ const SPEED_PRESETS = {
   fast: { dur: 12, magnitude: 1.6 }
 };
 
+/* ──────────────────────────────────────────────────────────────────
+   i18n — textos bilingües (es / en)
+   tr("es", "en") marca un texto traducible dentro de los datos;
+   localize() resuelve recursivamente todos los tr() al idioma activo.
+   ────────────────────────────────────────────────────────────────── */
+const LANGS = ["es", "en"];
+const tr = (es, en) => ({ __i18n: true, es, en });
+
+function localize(v, lang) {
+  if (Array.isArray(v)) return v.map((x) => localize(x, lang));
+  if (v && typeof v === "object") {
+    if (v.__i18n) return v[lang] ?? v.es;
+    const out = {};
+    for (const k in v) out[k] = localize(v[k], lang);
+    return out;
+  }
+  return v;
+}
+
+const LangContext = React.createContext({ lang: "es", setLang: () => {} });
+const useLang = () => React.useContext(LangContext);
+/* t("texto en español", "English text") → texto en el idioma activo */
+function useT() {
+  const { lang } = useLang();
+  return (es, en) => (lang === "en" ? en : es);
+}
+
+function getInitialLang() {
+  try {
+    const saved = localStorage.getItem("lang");
+    if (LANGS.includes(saved)) return saved;
+  } catch {}
+  return "es";
+}
+
 /* Opciones de titular del hero */
 const HEADLINES = {
-  machines: { line1: "Investigo cómo", line2: "piensan las máquinas." },
-  researcher: { line1: "Ingeniero con mentalidad", line2: "de investigador." },
-  systems: { line1: "Sistemas que aprenden.", line2: "Código que dura." },
-  craft: { line1: "Donde la investigación", line2: "se vuelve software." }
+  machines: { line1: tr("Investigo cómo", "I research how"), line2: tr("piensan las máquinas.", "machines think.") },
+  researcher: { line1: tr("Ingeniero con mentalidad", "An engineer with"), line2: tr("de investigador.", "a researcher's mindset.") },
+  systems: { line1: tr("Sistemas que aprenden.", "Systems that learn."), line2: tr("Código que dura.", "Code that lasts.") },
+  craft: { line1: tr("Donde la investigación", "Where research"), line2: tr("se vuelve software.", "becomes software.") }
 };
 
 /* ──────────────────────────────────────────────────────────────────
@@ -181,45 +218,56 @@ const HEADLINES = {
 const PROJECTS = [
 {
   icon: "histopath",
-  eyebrow: "CNN desde scratch · 2026",
-  title: "Clasificación Médica con CNNs",
-  desc: "Red convolucional para clasificación de tejido histopatológico de colon. Construida con una CNN desde cero en TensorFlow/Keras, sin transfer learning.",
+  eyebrow: tr("CNN desde scratch · 2026", "CNN from scratch · 2026"),
+  title: tr("Clasificación Médica con CNNs", "Medical Classification with CNNs"),
+  desc: tr(
+    "Red convolucional para clasificación de tejido histopatológico de colon. Construida con una CNN desde cero en TensorFlow/Keras, sin transfer learning.",
+    "A convolutional network that classifies colon histopathology tissue. Built as a CNN from scratch in TensorFlow/Keras, with no transfer learning."
+  ),
   tags: ["Python", "TensorFlow", "Keras"],
   details: {
-    summary:
-    "Modelo de clasificación de tejido histopatológico de colon en 4 categorías (Normal, Low Grade, High Grade, Adenocarcinoma), construido con una CNN desde cero en TensorFlow/Keras — sin transfer learning.",
+    summary: tr(
+      "Modelo de clasificación de tejido histopatológico de colon en 4 categorías (Normal, Low Grade, High Grade, Adenocarcinoma), construido con una CNN desde cero en TensorFlow/Keras — sin transfer learning.",
+      "A model that classifies colon histopathology tissue into 4 categories (Normal, Low Grade, High Grade, Adenocarcinoma), built as a CNN from scratch in TensorFlow/Keras — no transfer learning."
+    ),
     metrics: [
-    { value: "91.67%", label: "Precisión global en test" },
-    { value: "100%", label: "Recall en tejido patológico" }],
+    { value: "91.67%", label: tr("Precisión global en test", "Overall test accuracy") },
+    { value: "100%", label: tr("Recall en tejido patológico", "Recall on pathological tissue") }],
 
     sections: [
     {
-      heading: "El desafío",
-      body:
-      "Dataset fuertemente desbalanceado: 780 muestras de Adenocarcinoma frente a solo 61 de tejido Normal. Un modelo entrenado sin precaución colapsa hacia la clase mayoritaria y se vuelve clínicamente inútil."
+      heading: tr("El desafío", "The challenge"),
+      body: tr(
+        "Dataset fuertemente desbalanceado: 780 muestras de Adenocarcinoma frente a solo 61 de tejido Normal. Un modelo entrenado sin precaución colapsa hacia la clase mayoritaria y se vuelve clínicamente inútil.",
+        "A heavily imbalanced dataset: 780 Adenocarcinoma samples versus only 61 of Normal tissue. A model trained without care collapses towards the majority class and becomes clinically useless."
+      )
     },
     {
-      heading: "El enfoque",
+      heading: tr("El enfoque", "The approach"),
       items: [
-      "Oversampling de clases minoritarias",
-      "Data augmentation específica para imágenes histológicas (simulando variaciones de tinción H&E)",
-      "Focal Loss para priorizar ejemplos difíciles",
-      "Test-Time Augmentation con 8 transformaciones geométricas"]
+      tr("Oversampling de clases minoritarias", "Oversampling of minority classes"),
+      tr("Data augmentation específica para imágenes histológicas (simulando variaciones de tinción H&E)", "Data augmentation tailored to histology images (simulating H&E staining variations)"),
+      tr("Focal Loss para priorizar ejemplos difíciles", "Focal Loss to prioritize hard examples"),
+      tr("Test-Time Augmentation con 8 transformaciones geométricas", "Test-Time Augmentation with 8 geometric transformations")]
 
     },
     {
-      heading: "Resultados",
-      body:
-      "Precisión global del 91,67% en el set de test, con un 100% de recall en la detección de tejido patológico — ningún caso de cáncer fue clasificado como sano."
+      heading: tr("Resultados", "Results"),
+      body: tr(
+        "Precisión global del 91,67% en el set de test, con un 100% de recall en la detección de tejido patológico — ningún caso de cáncer fue clasificado como sano.",
+        "Overall accuracy of 91.67% on the test set, with 100% recall in detecting pathological tissue — not a single cancer case was classified as healthy."
+      )
     },
     {
-      heading: "Interpretabilidad",
-      body:
-      "Implementé Grad-CAM para visualizar qué regiones del tejido activa la red al tomar cada decisión, aportando trazabilidad clínica al modelo.",
+      heading: tr("Interpretabilidad", "Interpretability"),
+      body: tr(
+        "Implementé Grad-CAM para visualizar qué regiones del tejido activa la red al tomar cada decisión, aportando trazabilidad clínica al modelo.",
+        "I implemented Grad-CAM to visualize which tissue regions the network activates on for each decision, adding clinical traceability to the model."
+      ),
       media: {
         src: "assets/gradcam.png",
-        alt: "Grad-CAM por clase — mapa de calor sobre tejido histopatológico de colon",
-        caption: "Grad-CAM por clase · imagen original, mapa de activación y superposición"
+        alt: tr("Grad-CAM por clase — mapa de calor sobre tejido histopatológico de colon", "Per-class Grad-CAM — heatmap over colon histopathology tissue"),
+        caption: tr("Grad-CAM por clase · imagen original, mapa de activación y superposición", "Per-class Grad-CAM · original image, activation map and overlay")
       }
     }]
 
@@ -227,163 +275,198 @@ const PROJECTS = [
 },
 {
   icon: "scan-eye",
-  eyebrow: "Visión por computador · 2024",
-  title: "Sistema de Visión Artificial",
-  desc: "PadelTracker es un pipeline modular de visión por computadora que analiza vídeos de pádel detectando pelota, rastreando jugadores y generando estadísticas tácticas.",
+  eyebrow: tr("Visión por computador · 2024", "Computer vision · 2024"),
+  title: tr("Sistema de Visión Artificial", "Computer Vision System"),
+  desc: tr(
+    "PadelTracker es un pipeline modular de visión por computadora que analiza vídeos de pádel detectando pelota, rastreando jugadores y generando estadísticas tácticas.",
+    "PadelTracker is a modular computer vision pipeline that analyzes padel videos, detecting the ball, tracking players and generating tactical statistics."
+  ),
   tags: ["Python", "OpenCV", "YOLOv8"],
   details: {
-    summary:
-    "PadelTracker es un sistema de analítica deportiva automatizada para partidos de pádel. Transforma vídeo broadcast en métricas tácticas y biomecánicas mediante un pipeline modular, con un fine-tuning propio de YOLOv8n entrenado por menos de 2 USD.",
+    summary: tr(
+      "PadelTracker es un sistema de analítica deportiva automatizada para partidos de pádel. Transforma vídeo broadcast en métricas tácticas y biomecánicas mediante un pipeline modular, con un fine-tuning propio de YOLOv8n entrenado por menos de 2 USD.",
+      "PadelTracker is an automated sports analytics system for padel matches. It turns broadcast video into tactical and biomechanical metrics through a modular pipeline, with a custom YOLOv8n fine-tune trained for under 2 USD."
+    ),
     video: "media/padeltracker-demo.mp4",
-    videoCaption: "Demo · Vídeo procesado por el pipeline de PadelTracker",
+    videoCaption: tr("Demo · Vídeo procesado por el pipeline de PadelTracker", "Demo · Video processed by the PadelTracker pipeline"),
     metrics: [
-    { value: "0.9103", label: "mAP@0.50 en detección de pelota" },
-    { value: "<2 USD", label: "Coste de entrenamiento en GPU" }],
+    { value: "0.9103", label: tr("mAP@0.50 en detección de pelota", "mAP@0.50 on ball detection") },
+    { value: "<2 USD", label: tr("Coste de entrenamiento en GPU", "GPU training cost") }],
 
     sections: [
     {
-      heading: "El desafío",
-      body:
-      "El modelo base de YOLOv8 entrenado en COCO no detecta pelotas de pádel — mAP prácticamente nulo. Sin una red especializada, ninguna métrica posterior (impactos, trayectorias, ritmo) puede calcularse de forma fiable."
+      heading: tr("El desafío", "The challenge"),
+      body: tr(
+        "El modelo base de YOLOv8 entrenado en COCO no detecta pelotas de pádel — mAP prácticamente nulo. Sin una red especializada, ninguna métrica posterior (impactos, trayectorias, ritmo) puede calcularse de forma fiable.",
+        "The base YOLOv8 model trained on COCO can't detect padel balls — its mAP is practically zero. Without a specialized network, none of the downstream metrics (impacts, trajectories, pace) can be computed reliably."
+      )
     },
     {
-      heading: "El enfoque",
+      heading: tr("El enfoque", "The approach"),
       items: [
-      "Construcción de PadelTracker100, dataset propio anotado de pelota en contexto de pádel",
-      "Fine-tuning de YOLOv8n sobre el dataset, con coste de cómputo inferior a 2 USD en GPU alquilada",
-      "Pipeline modular de 7 etapas, ejecutable en CPU local o en GPU en la nube (Colab / RunPod)",
-      "Diseño orientado a reproducibilidad: cada etapa exporta artefactos intermedios verificables"]
+      tr("Construcción de PadelTracker100, dataset propio anotado de pelota en contexto de pádel", "Built PadelTracker100, a custom dataset with the ball annotated in padel footage"),
+      tr("Fine-tuning de YOLOv8n sobre el dataset, con coste de cómputo inferior a 2 USD en GPU alquilada", "Fine-tuned YOLOv8n on the dataset for under 2 USD of rented GPU compute"),
+      tr("Pipeline modular de 7 etapas, ejecutable en CPU local o en GPU en la nube (Colab / RunPod)", "A modular 7-stage pipeline that runs on a local CPU or a cloud GPU (Colab / RunPod)"),
+      tr("Diseño orientado a reproducibilidad: cada etapa exporta artefactos intermedios verificables", "Designed for reproducibility: every stage exports verifiable intermediate artifacts")]
 
     },
     {
       heading: "Pipeline",
       items: [
-      "1 — Mapeo de la pista por homografía",
-      "2 — Detección y rastreo de los 4 jugadores",
-      "3 — Estimación de pose de cada jugador",
-      "4 — Rastreo de la pelota con el modelo afinado",
-      "5 — Detección de impactos y golpes mediante heurísticas",
-      "6 — Generación de estadísticas tácticas y biomecánicas",
-      "7 — Anotación y renderizado del vídeo final"]
+      tr("1 — Mapeo de la pista por homografía", "1 — Court mapping via homography"),
+      tr("2 — Detección y rastreo de los 4 jugadores", "2 — Detection and tracking of the 4 players"),
+      tr("3 — Estimación de pose de cada jugador", "3 — Pose estimation for each player"),
+      tr("4 — Rastreo de la pelota con el modelo afinado", "4 — Ball tracking with the fine-tuned model"),
+      tr("5 — Detección de impactos y golpes mediante heurísticas", "5 — Impact and shot detection using heuristics"),
+      tr("6 — Generación de estadísticas tácticas y biomecánicas", "6 — Generation of tactical and biomechanical statistics"),
+      tr("7 — Anotación y renderizado del vídeo final", "7 — Annotation and rendering of the final video")]
 
     },
     {
-      heading: "Resultados",
-      body:
-      "El sistema produce heatmaps individuales por jugador, distancias recorridas, distribución de golpes y un mapa de impactos sobre la pista. El fine-tuning lleva la detección de pelota de mAP nulo a 0.9103 con un coste de entrenamiento marginal."
+      heading: tr("Resultados", "Results"),
+      body: tr(
+        "El sistema produce heatmaps individuales por jugador, distancias recorridas, distribución de golpes y un mapa de impactos sobre la pista. El fine-tuning lleva la detección de pelota de mAP nulo a 0.9103 con un coste de entrenamiento marginal.",
+        "The system produces per-player heatmaps, distances covered, shot distribution and a map of impacts on the court. Fine-tuning takes ball detection from near-zero mAP to 0.9103 at a marginal training cost."
+      )
     },
     {
-      heading: "Entregables",
-      body:
-      "El proyecto incluye un paper técnico en formato IEEE describiendo arquitectura, dataset y evaluación, así como un pipeline ejecutable end-to-end en local o en la nube."
+      heading: tr("Entregables", "Deliverables"),
+      body: tr(
+        "El proyecto incluye un paper técnico en formato IEEE describiendo arquitectura, dataset y evaluación, así como un pipeline ejecutable end-to-end en local o en la nube.",
+        "The project includes a technical paper in IEEE format describing the architecture, dataset and evaluation, plus an end-to-end pipeline that runs locally or in the cloud."
+      )
     }],
 
     links: [
-    { label: "Repositorio en GitHub", url: "https://github.com/HugoFernandezz/PadelTracker", icon: "github" },
-    { label: "Paper técnico (Zenodo)", url: "https://zenodo.org/records/19661898", icon: "file-text" }]
+    { label: tr("Repositorio en GitHub", "GitHub repository"), url: "https://github.com/HugoFernandezz/PadelTracker", icon: "github" },
+    { label: tr("Paper técnico (Zenodo)", "Technical paper (Zenodo)"), url: "https://zenodo.org/records/19661898", icon: "file-text" }]
 
   }
 },
 {
   icon: "clapperboard",
   eyebrow: "Harness engineering · 2026",
-  title: "Editor agéntico",
-  desc: "Das una idea y una cadena de 7 agentes te devuelve un vídeo educativo de Manim — narrado con mi voz clonada en ElevenLabs y montado de principio a fin. Mi parte favorita: el harness que sostiene todo eso.",
+  title: tr("Editor agéntico", "Agentic editor"),
+  desc: tr(
+    "Das una idea y una cadena de 7 agentes te devuelve un vídeo educativo de Manim — narrado con mi voz clonada en ElevenLabs y montado de principio a fin. Mi parte favorita: el harness que sostiene todo eso.",
+    "You give it an idea and a chain of 7 agents hands you back an educational Manim video — narrated in my ElevenLabs-cloned voice and edited start to finish. My favorite part: the harness holding it all together."
+  ),
   tags: ["Python", "FastAPI", "Next.js", "Claude Code"],
   details: {
-    summary:
+    summary: tr(
       "Quería ver hasta dónde podía empujar a un agente de IA antes de que se rompiera. ManimEditorAgent es lo que apareció: das una idea, una cadena de agentes la convierte en un vídeo educativo de Manim — narrado con mi voz clonada en ElevenLabs, montado y listo para subir.",
+      "I wanted to see how far I could push an AI agent before it broke. ManimEditorAgent is what came out of it: you give it an idea and a chain of agents turns it into an educational Manim video — narrated in my ElevenLabs-cloned voice, edited and ready to upload."
+    ),
     video: "media/manimeditoragent-demo.mp4",
-    videoCaption: "Demo · Pipeline end-to-end: idea → vídeo narrado con mi voz clonada",
+    videoCaption: tr("Demo · Pipeline end-to-end: idea → vídeo narrado con mi voz clonada", "Demo · End-to-end pipeline: idea → video narrated in my cloned voice"),
     metrics: null,
     sections: [
       {
-        heading: "El origen",
-        body:
+        heading: tr("El origen", "The origin"),
+        body: tr(
           "Producir un vídeo educativo con Manim a mano es tedioso: escribes la narrativa, programas cada escena, persigues errores de render, sincronizas audio y editas. Quise saber si podía delegar todo eso en agentes y quedarme sólo con la parte de decidir.",
+          "Producing an educational Manim video by hand is tedious: you write the narrative, code every scene, chase render errors, sync the audio and edit. I wanted to know whether I could hand all of that to agents and keep only the deciding for myself."
+        ),
       },
       {
-        heading: "Lo que más me importó: el harness",
-        body:
+        heading: tr("Lo que más me importó: el harness", "What I cared about most: the harness"),
+        body: tr(
           "Encadenar llamadas a un LLM y rezar no funciona — cualquier escena fallida te bloquea el resto del vídeo. Pasé la mayor parte del proyecto construyendo el harness alrededor de los agentes: la capa que valida cada paso antes de avanzar, reintenta con contexto del error anterior, aísla escenas en paralelo y registra cada decisión para poder depurarla. Es la diferencia entre un demo que cae y un sistema que llega al final sin supervisión.",
+          "Chaining LLM calls and hoping for the best doesn't work — any failed scene blocks the rest of the video. I spent most of the project building the harness around the agents: the layer that validates each step before moving on, retries with context from the previous error, isolates scenes in parallel and logs every decision so it can be debugged. It's the difference between a demo that falls over and a system that reaches the end unsupervised."
+        ),
       },
       {
-        heading: "Mi voz, automatizada",
-        body:
+        heading: tr("Mi voz, automatizada", "My voice, automated"),
+        body: tr(
           "Clone mi propia voz en ElevenLabs y la enchufé al pipeline como narrador por defecto. El resultado son vídeos que parecen doblados por mí — sin grabar ni una toma. Si no quieres pagar la API, hay un modo gratuito con gTTS que sigue funcionando.",
+          "I cloned my own voice in ElevenLabs and plugged it into the pipeline as the default narrator. The result is videos that sound like I dubbed them myself — without recording a single take. If you don't want to pay for the API, there's a free gTTS mode that still works."
+        ),
       },
       {
-        heading: "Los 7 agentes",
+        heading: tr("Los 7 agentes", "The 7 agents"),
         items: [
-          "Researcher — averigua qué plugins de Manim hacen falta para la idea",
-          "Planner — propone el outline de escenas",
-          "Beat Writer — sincroniza narración y animación beat a beat",
-          "Coder — escribe el código Manim de cada escena con el audio ya embebido",
-          "Visual QA — mira frames del render y propone correcciones",
-          "Editor — concatena escenas con ffmpeg en el vídeo final",
-          "Curator — extrae aprendizajes y actualiza la skill para la próxima ejecución",
+          tr("Researcher — averigua qué plugins de Manim hacen falta para la idea", "Researcher — works out which Manim plugins the idea needs"),
+          tr("Planner — propone el outline de escenas", "Planner — proposes the scene outline"),
+          tr("Beat Writer — sincroniza narración y animación beat a beat", "Beat Writer — syncs narration and animation beat by beat"),
+          tr("Coder — escribe el código Manim de cada escena con el audio ya embebido", "Coder — writes the Manim code for each scene with the audio already embedded"),
+          tr("Visual QA — mira frames del render y propone correcciones", "Visual QA — inspects render frames and suggests fixes"),
+          tr("Editor — concatena escenas con ffmpeg en el vídeo final", "Editor — stitches the scenes into the final video with ffmpeg"),
+          tr("Curator — extrae aprendizajes y actualiza la skill para la próxima ejecución", "Curator — extracts lessons and updates the skill for the next run"),
         ],
       },
       {
-        heading: "El sistema se autodocumenta",
-        body:
+        heading: tr("El sistema se autodocumenta", "The system documents itself"),
+        body: tr(
           "El Curator escribe sobre la propia skill de Manim: reglas, atajos, errores comunes que ya conoce. Cada ejecución deja al siguiente agente un poco más informado. Me gustó la idea de que el sistema no sólo entregue vídeos, sino que aprenda mientras los entrega.",
+          "The Curator writes into the Manim skill itself: rules, shortcuts, common errors it already knows about. Every run leaves the next agent a little better informed. I liked the idea of a system that doesn't just deliver videos, but learns while it delivers them."
+        ),
       },
       {
-        heading: "Cómo se usa",
-        body:
+        heading: tr("Cómo se usa", "How it's used"),
+        body: tr(
           "Una interfaz web donde escribes la idea, apruebas los plugins propuestos, revisas cada escena y descargas el MP4. Soporta YouTube (16:9) y TikTok (9:16) con narrativas adaptadas — más analítica en YouTube, hook en los primeros 3s para TikTok.",
+          "A web interface where you type the idea, approve the proposed plugins, review each scene and download the MP4. It supports YouTube (16:9) and TikTok (9:16) with adapted narratives — more analytical for YouTube, a hook in the first 3 seconds for TikTok."
+        ),
       },
     ],
     links: [
-      { label: "Repositorio en GitHub", url: "https://github.com/HugoFernandezz/ManimEditorAgent", icon: "github" },
+      { label: tr("Repositorio en GitHub", "GitHub repository"), url: "https://github.com/HugoFernandezz/ManimEditorAgent", icon: "github" },
     ],
   },
 },
 {
   icon: "party-popper",
-  eyebrow: "App nativa · React Native · 2025",
-  title: "App nativa móvil",
-  desc: "Brindis! — app para descubrir la vida nocturna de Murcia. Un bot scrapea varias webs cada noche, normaliza los eventos a un único formato, los sube a Firebase y la app los pinta — con caché inteligente y modo offline.",
+  eyebrow: tr("App nativa · React Native · 2025", "Native app · React Native · 2025"),
+  title: tr("App nativa móvil", "Native mobile app"),
+  desc: tr(
+    "Brindis! — app para descubrir la vida nocturna de Murcia. Un bot scrapea varias webs cada noche, normaliza los eventos a un único formato, los sube a Firebase y la app los pinta — con caché inteligente y modo offline.",
+    "Brindis! — an app for discovering Murcia's nightlife. A bot scrapes several websites every night, normalizes the events into a single format, uploads them to Firebase and the app renders them — with smart caching and offline mode."
+  ),
   tags: ["React Native", "Expo", "TypeScript", "Firebase", "Python"],
   store: {
     ios: "https://apps.apple.com/es/app/brindis-fiesta-en-murcia/id6757165849",
     android: "https://play.google.com/store/apps/details?id=com.jaleo.app&hl=es",
   },
   details: {
-    summary:
+    summary: tr(
       "Llevaba tiempo queriendo un producto pequeño punta a punta: scraping, backend, datos, app y publicación. Brindis! salió de ahí — descubres qué se cuece esta noche en Murcia sin abrir cinco Instagrams distintos.",
+      "I'd wanted to build a small end-to-end product for a while: scraping, backend, data, app and publishing. Brindis! came out of that — find out what's on tonight in Murcia without opening five different Instagram accounts."
+    ),
     video: "media/brindis-demo.mp4",
-    videoCaption: "Demo · Recorrido por la app: agenda, filtro por sala y detalle de evento",
+    videoCaption: tr("Demo · Recorrido por la app: agenda, filtro por sala y detalle de evento", "Demo · App walkthrough: schedule, venue filter and event detail"),
     sections: [
       {
-        heading: "El flujo de datos",
+        heading: tr("El flujo de datos", "The data flow"),
         items: [
-          "01 — Un bot en Python scrapea a diario las webs y redes de las salas de Murcia",
-          "02 — Normaliza cada evento al mismo formato: fecha, sala, precio, estado de entradas, transporte",
-          "03 — Lo sube a Firebase como un único JSON canónico",
-          "04 — La app descarga ese JSON, lo cachea, y lo pinta en una agenda agrupada por fechas",
-          "05 — A las 20:30h hora de Madrid, el ciclo se repite. Si no hay cambios, no consume datos del usuario",
+          tr("01 — Un bot en Python scrapea a diario las webs y redes de las salas de Murcia", "01 — A Python bot scrapes the websites and social media of Murcia's venues every day"),
+          tr("02 — Normaliza cada evento al mismo formato: fecha, sala, precio, estado de entradas, transporte", "02 — It normalizes each event into the same format: date, venue, price, ticket status, transport"),
+          tr("03 — Lo sube a Firebase como un único JSON canónico", "03 — It uploads everything to Firebase as a single canonical JSON"),
+          tr("04 — La app descarga ese JSON, lo cachea, y lo pinta en una agenda agrupada por fechas", "04 — The app downloads that JSON, caches it and renders it as a schedule grouped by date"),
+          tr("05 — A las 20:30h hora de Madrid, el ciclo se repite. Si no hay cambios, no consume datos del usuario", "05 — At 20:30 Madrid time the cycle repeats. If nothing has changed, it uses none of the user's data"),
         ],
       },
       {
-        heading: "La app",
-        body:
+        heading: tr("La app", "The app"),
+        body: tr(
           "Agenda de eventos por fecha con headers sticky, filtro horizontal por discoteca, y tarjetas por entrada con estados visuales — disponible, últimas, agotado. Los eventos con bus incluido tienen su propio badge. Todo navega de la home al detalle con animaciones nativas.",
+          "An event schedule by date with sticky headers, a horizontal club filter and per-ticket cards with visual states — available, last few, sold out. Events with a bus included get their own badge. Everything navigates from home to detail with native animations."
+        ),
       },
       {
-        heading: "Detalles que me importaron",
+        heading: tr("Detalles que me importaron", "Details I cared about"),
         items: [
-          "Caché por encima de Firebase — la app abre instantánea aunque estés sin red",
-          "Memory leaks rastreados con calma — useMemo, useCallback y dependencias de useEffect bien puestas",
-          "Sin librerías de UI: cada componente está escrito a mano para que el look-and-feel sea consistente",
-          "Estados de error visibles: si una URL de compra rompe, la app lo dice en vez de fallar en silencio",
+          tr("Caché por encima de Firebase — la app abre instantánea aunque estés sin red", "A cache on top of Firebase — the app opens instantly even with no connection"),
+          tr("Memory leaks rastreados con calma — useMemo, useCallback y dependencias de useEffect bien puestas", "Memory leaks tracked down patiently — useMemo, useCallback and useEffect dependencies set correctly"),
+          tr("Sin librerías de UI: cada componente está escrito a mano para que el look-and-feel sea consistente", "No UI libraries: every component is handwritten so the look and feel stays consistent"),
+          tr("Estados de error visibles: si una URL de compra rompe, la app lo dice en vez de fallar en silencio", "Visible error states: if a ticket URL breaks, the app says so instead of failing silently"),
         ],
       },
       {
         heading: "Stack",
-        body:
+        body: tr(
           "React Native + Expo + TypeScript en el cliente. Python para el scraper. Firebase como capa de datos. El backend cabe en una función serverless que dispara el bot a su hora.",
+          "React Native + Expo + TypeScript on the client. Python for the scraper. Firebase as the data layer. The backend fits in a serverless function that triggers the bot on schedule."
+        ),
       },
     ],
   },
@@ -392,12 +475,66 @@ const PROJECTS = [
 
 const CERTS = [
 {
+  icon: "network",
+  title: tr("CCNAv7 · Introducción a Redes", "CCNAv7 · Introduction to Networks"),
+  issuer: "Cisco Networking Academy · Universidad Católica de Murcia",
+  date: "Nov 2026",
+  hours: "70 h",
+  tags: ["Switching", "Routing", "IPv4 / IPv6", tr("Modelo OSI", "OSI model")],
+  file: "media/certs/cisco-ccna-itn.pdf"
+},
+{
+  icon: "code",
+  title: "Software Development Fundamentals",
+  issuer: "Microsoft Imagine Academy · Universidad Católica de Murcia",
+  date: "Nov 2026",
+  hours: null,
+  tags: [tr("POO", "OOP"), tr("Desarrollo de software", "Software development"), tr("Apps de escritorio", "Desktop apps"), tr("Bases de datos", "Databases")],
+  file: "media/certs/microsoft-software-dev-fundamentals.pdf"
+},
+{
+  icon: "database",
+  title: tr("Oracle Database · Conceptos fundamentales de SQL I", "Oracle Database · SQL Fundamentals I"),
+  issuer: "Oracle Academy · Universidad Católica de Murcia",
+  date: "Nov 2026",
+  hours: "25 h",
+  tags: ["SQL", "Joins", tr("Subconsultas", "Subqueries"), "DDL / DML"],
+  file: "media/certs/oracle-sql-fundamentals-1.pdf"
+},
+{
+  icon: "workflow",
+  title: "Oracle Data Modeling and Relational Database Design",
+  issuer: "Oracle Academy · Universidad Católica de Murcia",
+  date: "Nov 2026",
+  hours: "25 h",
+  tags: [tr("Modelo E/R", "E/R model"), tr("Normalización", "Normalization"), tr("Diseño relacional", "Relational design"), "SQL Developer Data Modeler"],
+  file: "media/certs/oracle-data-modeling.pdf"
+},
+{
+  icon: "database",
+  title: tr("Oracle Database · Conceptos fundamentales de PL/SQL", "Oracle Database · PL/SQL Fundamentals"),
+  issuer: "Oracle Academy · Universidad Católica de Murcia",
+  date: "Nov 2026",
+  hours: "25 h",
+  tags: ["PL/SQL", tr("Cursores", "Cursors"), tr("Excepciones", "Exceptions"), tr("Estructuras de control", "Control structures")],
+  file: "media/certs/oracle-plsql-fundamentals.pdf"
+},
+{
+  icon: "database",
+  title: tr("Oracle Database · Desarrollo de Unidades de Programa en PL/SQL", "Oracle Database · Develop PL/SQL Program Units"),
+  issuer: "Oracle Academy · Universidad Católica de Murcia",
+  date: "Nov 2026",
+  hours: "25 h",
+  tags: [tr("Procedimientos", "Procedures"), tr("Paquetes", "Packages"), "Triggers", tr("SQL dinámico", "Dynamic SQL")],
+  file: "media/certs/oracle-plsql-program-units.pdf"
+},
+{
   icon: "award",
   title: "Oracle Certified Associate · Java SE 7 Programmer",
   issuer: "Oracle Academy · Universidad Católica de Murcia",
   date: "Nov 2025",
   hours: "25 h",
-  tags: ["Java SE 7", "POO", "JDK 7", "Genéricos"],
+  tags: ["Java SE 7", tr("POO", "OOP"), "JDK 7", tr("Genéricos", "Generics")],
   file: "media/certs/oracle-java-se7.pdf"
 },
 {
@@ -406,15 +543,15 @@ const CERTS = [
   issuer: "Cisco Networking Academy · Linux Professional Institute",
   date: "Nov 2025",
   hours: null,
-  tags: ["Línea de comandos", "Permisos", "Sistema de ficheros", "Shell"],
+  tags: [tr("Línea de comandos", "Command line"), tr("Permisos", "Permissions"), tr("Sistema de ficheros", "File system"), "Shell"],
   file: "media/certs/ndg-linux-essentials.pdf"
 }];
 
 const STACK = [
-{ group: "Lenguajes", items: ["Python", "Java", "TypeScript", "C"] },
-{ group: "IA / Data", items: ["PyTorch", "Scikit-learn", "Pandas"] },
-{ group: "Móvil", items: ["React Native", "Expo", "Swift básico"] },
-{ group: "Sistemas", items: ["Linux", "Docker", "Git", "Bash"] }];
+{ group: tr("Lenguajes", "Languages"), items: ["Python", "Java", "TypeScript", "C"] },
+{ group: tr("IA / Data", "AI / Data"), items: ["PyTorch", "Scikit-learn", "Pandas"] },
+{ group: tr("Móvil", "Mobile"), items: ["React Native", "Expo", tr("Swift básico", "Basic Swift")] },
+{ group: tr("Sistemas", "Systems"), items: ["Linux", "Docker", "Git", "Bash"] }];
 
 
 /* ──────────────────────────────────────────────────────────────────
@@ -583,7 +720,38 @@ function Blob({ top, left, right, bottom, size = 320, color = "#FFC097", shape =
 /* ──────────────────────────────────────────────────────────────────
    Page sections
    ────────────────────────────────────────────────────────────────── */
+function LangToggle() {
+  const { lang, setLang } = useLang();
+  return (
+    <div
+      role="group"
+      aria-label={lang === "en" ? "Language" : "Idioma"}
+      className="inline-flex items-center p-[3px] rounded-full font-mono text-[11px] tracking-[0.08em]"
+      style={{ border: "1px solid var(--line)", background: "rgba(255,255,255,0.6)" }}>
+      {LANGS.map((l) => {
+        const active = lang === l;
+        return (
+          <button
+            key={l}
+            type="button"
+            lang={l}
+            aria-pressed={active}
+            aria-label={l === "es" ? "Español" : "English"}
+            onClick={() => setLang(l)}
+            className="px-2.5 py-1 rounded-full transition-colors"
+            style={{
+              background: active ? "var(--ink)" : "transparent",
+              color: active ? "var(--bg)" : "var(--ink-3)",
+              cursor: active ? "default" : "pointer"
+            }}>
+            {l.toUpperCase()}
+          </button>);
+      })}
+    </div>);
+}
+
 function TopNav({ accent }) {
+  const t = useT();
   return (
     <nav className="w-full relative z-20">
       <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-8 md:pt-10 flex items-center justify-between">
@@ -594,18 +762,20 @@ function TopNav({ accent }) {
           
           <span className="font-medium tracking-tight text-[15px]">Hugo Fernández Gil</span>
         </a>
-        <div className="hidden md:flex items-center gap-7 text-[14px]" style={{ color: "var(--ink-2)" }}>
-          <a href="#about" className="link-quiet">Sobre mí</a>
-          <a href="#projects" className="link-quiet">Proyectos</a>
-          <a href="#skills" className="link-quiet">Formación</a>
-          <a href="#contact" className="link-quiet">Contacto</a>
+        <div className="flex items-center gap-5 md:gap-7">
+          <div className="hidden md:flex items-center gap-7 text-[14px]" style={{ color: "var(--ink-2)" }}>
+            <a href="#about" className="link-quiet">{t("Sobre mí", "About")}</a>
+            <a href="#projects" className="link-quiet">{t("Proyectos", "Projects")}</a>
+            <a href="#skills" className="link-quiet">{t("Formación", "Education")}</a>
+            <a href="#contact" className="link-quiet">{t("Contacto", "Contact")}</a>
+          </div>
+          <a
+            href="#contact"
+            className="md:hidden text-[13px] font-medium link-quiet">
+            {t("Contacto", "Contact")}
+          </a>
+          <LangToggle />
         </div>
-        <a
-          href="#contact"
-          className="md:hidden text-[13px] font-medium link-quiet">
-          
-          Contacto
-        </a>
       </div>
     </nav>);
 
@@ -613,6 +783,9 @@ function TopNav({ accent }) {
 
 function Hero({ tweaks }) {
   const accent = ACCENTS[tweaks.accent];
+  const t = useT();
+  const { lang } = useLang();
+  const headline = localize(HEADLINES[tweaks.headline] || HEADLINES.machines, lang);
   return (
     <section id="top" className="relative">
       {/* Una mancha por sección */}
@@ -628,18 +801,18 @@ function Hero({ tweaks }) {
           <span className="inline-flex items-center gap-2">
               <span className="dot" style={{ background: accent.color, boxShadow: `0 0 0 4px ${accent.soft}` }} />
               <span className={`text-[12px] tracking-wide uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`}>
-                Abierto a colaborar
+                {t("Abierto a colaborar", "Open to collaborate")}
               </span>
             </span>
           }
           <span className="w-px h-3" style={{ background: "var(--line-2)" }} />
           <span className={`inline-flex items-center gap-1.5 text-[12px] tracking-wide uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`}>
             <Icon name="map-pin" size={12} strokeWidth={1.75} />
-            Murcia · España
+            {t("Murcia · España", "Murcia · Spain")}
           </span>
           <span className="w-px h-3" style={{ background: "var(--line-2)" }} />
           <span className={`text-[12px] tracking-wide uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`}>
-            3.º Ingeniería Informática
+            {t("3.º Ingeniería Informática", "3rd-year Computer Engineering")}
           </span>
         </div>
 
@@ -648,7 +821,7 @@ function Hero({ tweaks }) {
           className="reveal text-[15px] md:text-[16px] mb-5"
           style={{ animationDelay: "0.12s", color: "var(--ink-2)" }}>
           
-          Hola, soy Hugo Fernández Gil.
+          {t("Hola, soy Hugo Fernández Gil.", "Hi, I'm Hugo Fernández Gil.")}
         </p>
 
         {/* Headline */}
@@ -656,10 +829,10 @@ function Hero({ tweaks }) {
           className="reveal text-[44px] leading-[1.05] md:text-[80px] md:leading-[0.98] font-medium tracking-[-0.025em]"
           style={{ animationDelay: "0.2s" }}>
           
-          {HEADLINES[tweaks.headline]?.line1 || HEADLINES.machines.line1}
+          {headline.line1}
           <br />
           <span style={{ color: "var(--accent-deep, #D77A3A)" }}>
-            {HEADLINES[tweaks.headline]?.line2 || HEADLINES.machines.line2}
+            {headline.line2}
           </span>
         </h1>
 
@@ -668,9 +841,18 @@ function Hero({ tweaks }) {
           className="reveal mt-8 md:mt-10 max-w-[640px] text-[17px] md:text-[19px] leading-[1.55]"
           style={{ animationDelay: "0.3s", color: "var(--ink-2)" }}>
           
-          Apasionado por la{" "}
-          <span style={{ color: "var(--ink)" }}>Inteligencia Artificial</span> y la{" "}
-          <span style={{ color: "var(--ink)" }}>investigación</span>.
+          {lang === "en" ?
+          <>
+            Passionate about{" "}
+            <span style={{ color: "var(--ink)" }}>Artificial Intelligence</span> and{" "}
+            <span style={{ color: "var(--ink)" }}>research</span>.
+          </> :
+          <>
+            Apasionado por la{" "}
+            <span style={{ color: "var(--ink)" }}>Inteligencia Artificial</span> y la{" "}
+            <span style={{ color: "var(--ink)" }}>investigación</span>.
+          </>
+          }
         </p>
 
         {/* CTAs */}
@@ -682,14 +864,14 @@ function Hero({ tweaks }) {
             href="#projects"
             className="btn-primary inline-flex items-center gap-2 px-5 py-3 rounded-full text-[14px] font-medium">
             
-            Ver proyectos
+            {t("Ver proyectos", "View projects")}
             <Icon name="arrow-right" size={16} strokeWidth={1.75} />
           </a>
           <a
             href="#contact"
             className="btn-ghost inline-flex items-center gap-1.5 px-5 py-3 rounded-full text-[14px] font-medium">
-            
-            Contacto
+
+            {t("Contacto", "Contact")}
           </a>
         </div>
 
@@ -700,10 +882,10 @@ function Hero({ tweaks }) {
           
           <div className={`text-[11px] tracking-[0.14em] uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
             <div>Portfolio · 2026</div>
-            <div className="mt-1.5">v1.0 — en construcción</div>
+            <div className="mt-1.5">{t("v1.0 — en construcción", "v1.0 — work in progress")}</div>
           </div>
           <a href="#about" className="hidden md:inline-flex items-center gap-2 text-[12px] tracking-wide uppercase link-quiet" style={{ color: "var(--ink-3)" }}>
-            <span className={tweaks.monoCaptions ? "font-mono" : ""}>Sigue bajando</span>
+            <span className={tweaks.monoCaptions ? "font-mono" : ""}>{t("Sigue bajando", "Keep scrolling")}</span>
             <Icon name="arrow-down" size={14} strokeWidth={1.5} />
           </a>
         </div>
@@ -713,6 +895,7 @@ function Hero({ tweaks }) {
 }
 
 function About({ tweaks }) {
+  const t = useT();
   return (
     <section id="about" className="relative">
       <Blob top={120} left={-200} size={[360, 340]} color="#FFC79A" shape={1} />
@@ -722,27 +905,33 @@ function About({ tweaks }) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16">
           <div className="md:col-span-3" style={{ width: "232px" }}>
             <div className={`text-[11px] tracking-[0.16em] uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
-              01 — Sobre mí
+              {t("01 — Sobre mí", "01 — About")}
             </div>
           </div>
           <div className="md:col-span-9 max-w-[680px]">
             <p className="text-[22px] md:text-[28px] leading-[1.35] tracking-[-0.01em] font-medium">
-              Investigo, prototipo y construyo.
+              {t("Investigo, prototipo y construyo.", "I research, prototype and build.")}
             </p>
             <p className="mt-5 text-[16px] md:text-[17px] leading-[1.65]" style={{ color: "var(--ink-2)" }}>
-              Me interesa la frontera entre la IA y los sistemas que la sostienen: leer papers, replicar experimentos y traducirlos en código mantenible. Busco claridad sobre velocidad y profundidad sobre síntomas.
+              {t(
+                "Me interesa la frontera entre la IA y los sistemas que la sostienen: leer papers, replicar experimentos y traducirlos en código mantenible. Busco claridad sobre velocidad y profundidad sobre síntomas.",
+                "I'm interested in the boundary between AI and the systems that support it: reading papers, replicating experiments and turning them into maintainable code. I favor clarity over speed and root causes over symptoms."
+              )}
             </p>
             <p className="mt-4 text-[16px] md:text-[17px] leading-[1.65]" style={{ color: "var(--ink-2)" }}>
-              Aprendo rápido y me adapto a las circunstancias — entrar en un dominio nuevo, y aprender una nueva tecnologia, es parte de lo que más disfruto.
+              {t(
+                "Aprendo rápido y me adapto a las circunstancias — entrar en un dominio nuevo, y aprender una nueva tecnologia, es parte de lo que más disfruto.",
+                "I learn fast and adapt to circumstances — stepping into a new domain and picking up a new technology is part of what I enjoy most."
+              )}
             </p>
 
             {/* Tiny meta strip */}
             <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-8" style={{ borderTop: "1px solid var(--line)" }}>
               {[
-                { k: "Estudios", v: "Ingeniería Informática" },
-                { k: "Curso", v: "3.º año" },
-                { k: "Enfoque", v: "IA & sistemas" },
-                { k: "Base", v: "Murcia, ES" }].
+                { k: t("Estudios", "Studies"), v: t("Ingeniería Informática", "Computer Engineering") },
+                { k: t("Curso", "Year"), v: t("3.º año", "3rd year") },
+                { k: t("Enfoque", "Focus"), v: t("IA & sistemas", "AI & systems") },
+                { k: t("Base", "Based in"), v: "Murcia, ES" }].
                 map((m) =>
                 <div key={m.k}>
                   <div className={`text-[11px] tracking-[0.14em] uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
@@ -763,6 +952,7 @@ function About({ tweaks }) {
 function ProjectCard({ p, i, total, tweaks, onOpen, variant = "default" }) {
   const isList = variant === "list";
   const onActivate = () => onOpen && onOpen(p);
+  const t = useT();
 
   if (isList) {
     return (
@@ -849,7 +1039,7 @@ function ProjectCard({ p, i, total, tweaks, onOpen, variant = "default" }) {
           0{i + 1} / 0{total}
         </span>
         <span className="inline-flex items-center gap-1 transition-colors group-hover:text-[var(--ink)]">
-          Ver detalles
+          {t("Ver detalles", "View details")}
           <span className="card-cta-arrow">
             <Icon name="arrow-up-right" size={14} strokeWidth={1.5} />
           </span>
@@ -859,7 +1049,8 @@ function ProjectCard({ p, i, total, tweaks, onOpen, variant = "default" }) {
   );
 }
 
-function ProjectsCarousel({ tweaks, onOpen }) {
+function ProjectsCarousel({ projects, tweaks, onOpen }) {
+  const t = useT();
   const trackRef = useRef(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
@@ -907,9 +1098,9 @@ function ProjectsCarousel({ tweaks, onOpen }) {
           paddingRight: "24px",
         }}
       >
-        {PROJECTS.map((p, i) => (
+        {projects.map((p, i) => (
           <div
-            key={p.title}
+            key={i}
             className="carousel-item"
             style={{
               flex: "0 0 calc((100% - 48px) / 3)",
@@ -917,20 +1108,20 @@ function ProjectsCarousel({ tweaks, onOpen }) {
               scrollSnapAlign: "start",
             }}
           >
-            <ProjectCard p={p} i={i} total={PROJECTS.length} tweaks={tweaks} onOpen={onOpen} />
+            <ProjectCard p={p} i={i} total={projects.length} tweaks={tweaks} onOpen={onOpen} />
           </div>
         ))}
       </div>
 
       <div className="flex items-center justify-between mt-6">
         <div className={`text-[11px] tracking-[0.14em] uppercase font-mono`} style={{ color: "var(--ink-3)" }}>
-          Desliza para más proyectos
+          {t("Desliza para más proyectos", "Swipe for more projects")}
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => scrollByCards(-1)}
             disabled={!canPrev}
-            aria-label="Anterior"
+            aria-label={t("Anterior", "Previous")}
             className="carousel-btn"
           >
             <Icon name="arrow-left" size={16} strokeWidth={1.5} />
@@ -938,7 +1129,7 @@ function ProjectsCarousel({ tweaks, onOpen }) {
           <button
             onClick={() => scrollByCards(1)}
             disabled={!canNext}
-            aria-label="Siguiente"
+            aria-label={t("Siguiente", "Next")}
             className="carousel-btn"
           >
             <Icon name="arrow-right" size={16} strokeWidth={1.5} />
@@ -949,8 +1140,11 @@ function ProjectsCarousel({ tweaks, onOpen }) {
   );
 }
 
-function Projects({ tweaks, onOpen }) {
+function Projects({ projects, tweaks, onOpen }) {
   const layout = tweaks.projectsLayout || "grid";
+  const t = useT();
+  // Abrimos por índice para que el modal siga el idioma si se cambia con él abierto
+  const open = (p) => onOpen(projects.indexOf(p));
 
   return (
     <section id="projects" className="relative">
@@ -962,10 +1156,10 @@ function Projects({ tweaks, onOpen }) {
           <div className="flex items-end justify-between mb-12 md:mb-16">
             <div>
               <div className={`text-[11px] tracking-[0.16em] uppercase mb-3 ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
-                02 — Selección
+                {t("02 — Selección", "02 — Selected work")}
               </div>
               <h2 className="text-[32px] md:text-[44px] tracking-[-0.02em] font-medium leading-[1.1]">
-                Proyectos recientes.
+                {t("Proyectos recientes.", "Recent projects.")}
               </h2>
             </div>
             <a
@@ -973,19 +1167,19 @@ function Projects({ tweaks, onOpen }) {
               className="hidden md:inline-flex items-center gap-1.5 text-[13px] link-quiet"
               style={{ color: "var(--ink-2)" }}
             >
-              Pídeme detalles
+              {t("Pídeme detalles", "Ask me for details")}
               <Icon name="arrow-up-right" size={14} strokeWidth={1.5} />
             </a>
           </div>
         </Reveal>
 
-        {layout === "carousel" && <ProjectsCarousel tweaks={tweaks} onOpen={onOpen} />}
+        {layout === "carousel" && <ProjectsCarousel projects={projects} tweaks={tweaks} onOpen={open} />}
 
         {layout === "grid" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-            {PROJECTS.map((p, i) =>
-              <Reveal key={p.title} delay={i * 0.08}>
-                <ProjectCard p={p} i={i} total={PROJECTS.length} tweaks={tweaks} onOpen={onOpen} />
+            {projects.map((p, i) =>
+              <Reveal key={i} delay={i * 0.08}>
+                <ProjectCard p={p} i={i} total={projects.length} tweaks={tweaks} onOpen={open} />
               </Reveal>
             )}
           </div>
@@ -993,13 +1187,13 @@ function Projects({ tweaks, onOpen }) {
 
         {layout === "mosaic" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mosaic-grid">
-            {PROJECTS.map((p, i) =>
+            {projects.map((p, i) =>
               <Reveal
-                key={p.title}
+                key={i}
                 delay={i * 0.08}
                 className={i === 0 ? "md:col-span-2 md:row-span-2" : ""}
               >
-                <ProjectCard p={p} i={i} total={PROJECTS.length} tweaks={tweaks} onOpen={onOpen} />
+                <ProjectCard p={p} i={i} total={projects.length} tweaks={tweaks} onOpen={open} />
               </Reveal>
             )}
           </div>
@@ -1007,9 +1201,9 @@ function Projects({ tweaks, onOpen }) {
 
         {layout === "list" && (
           <div className="flex flex-col gap-4 md:gap-5">
-            {PROJECTS.map((p, i) =>
-              <Reveal key={p.title} delay={i * 0.06}>
-                <ProjectCard p={p} i={i} total={PROJECTS.length} tweaks={tweaks} onOpen={onOpen} variant="list" />
+            {projects.map((p, i) =>
+              <Reveal key={i} delay={i * 0.06}>
+                <ProjectCard p={p} i={i} total={projects.length} tweaks={tweaks} onOpen={open} variant="list" />
               </Reveal>
             )}
           </div>
@@ -1023,6 +1217,7 @@ function Projects({ tweaks, onOpen }) {
    VideoPlayer — reproductor minimalista para casos de estudio
    ────────────────────────────────────────────────────────────────── */
 function VideoPlayer({ src, caption }) {
+  const t = useT();
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1265,7 +1460,7 @@ function VideoPlayer({ src, caption }) {
       <button
         className="video-play-big"
         onClick={togglePlay}
-        aria-label="Reproducir vídeo">
+        aria-label={t("Reproducir vídeo", "Play video")}>
 
           <Icon name="play" size={26} strokeWidth={1.5} />
         </button>
@@ -1273,7 +1468,7 @@ function VideoPlayer({ src, caption }) {
 
       {/* Controls */}
       <div className={`video-controls ${showControls ? "visible" : ""}`}>
-        <button onClick={togglePlay} aria-label={isPlaying ? "Pausar" : "Reproducir"}>
+        <button onClick={togglePlay} aria-label={isPlaying ? t("Pausar", "Pause") : t("Reproducir", "Play")}>
           <Icon name={isPlaying ? "pause" : "play"} size={15} strokeWidth={1.75} />
         </button>
         <div className="video-time font-mono">{fmt(current)}</div>
@@ -1284,14 +1479,14 @@ function VideoPlayer({ src, caption }) {
         </div>
         <div className="video-time video-time-total font-mono">{fmt(duration)}</div>
         <div className="video-vol-group">
-          <button onClick={toggleMute} aria-label={muted ? "Activar sonido" : "Silenciar"}>
+          <button onClick={toggleMute} aria-label={muted ? t("Activar sonido", "Unmute") : t("Silenciar", "Mute")}>
             <Icon name={muted || volume === 0 ? "volume-x" : volume < 0.5 ? "volume-1" : "volume-2"} size={15} strokeWidth={1.5} />
           </button>
           <div
             className={`video-vol-track ${volScrubbing ? "dragging" : ""}`}
             onMouseDown={onVolMouseDown}
             role="slider"
-            aria-label="Volumen"
+            aria-label={t("Volumen", "Volume")}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round((muted ? 0 : volume) * 100)}>
@@ -1300,7 +1495,7 @@ function VideoPlayer({ src, caption }) {
             <div className="video-vol-thumb" style={{ left: `calc(${(muted ? 0 : volume) * 100}% - ${((muted ? 0 : volume) - 0.5) * 8}px)` }} />
           </div>
         </div>
-        <button onClick={toggleFullscreen} aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
+        <button onClick={toggleFullscreen} aria-label={isFullscreen ? t("Salir de pantalla completa", "Exit full screen") : t("Pantalla completa", "Full screen")}>
           <Icon name={isFullscreen ? "minimize-2" : "maximize-2"} size={14} strokeWidth={1.5} />
         </button>
       </div>
@@ -1326,6 +1521,7 @@ function VideoPlayer({ src, caption }) {
    ProjectModal — detalle expandido al hacer click en una tarjeta
    ────────────────────────────────────────────────────────────────── */
 function ProjectModal({ project, onClose }) {
+  const t = useT();
   useEffect(() => {
     if (!project) return;
     document.body.classList.add("modal-open");
@@ -1348,7 +1544,7 @@ function ProjectModal({ project, onClose }) {
       aria-modal="true">
       
       <div className="modal-card">
-        <button className="modal-close" onClick={onClose} aria-label="Cerrar">
+        <button className="modal-close" onClick={onClose} aria-label={t("Cerrar", "Close")}>
           <Icon name="x" size={18} strokeWidth={1.75} />
         </button>
 
@@ -1468,7 +1664,7 @@ function ProjectModal({ project, onClose }) {
             {project.details.links && project.details.links.length > 0 &&
           <div className="mt-12 pt-6" style={{ borderTop: "1px solid var(--line)" }}>
                 <div className={`text-[11px] font-mono tracking-[0.14em] uppercase mb-4`} style={{ color: "var(--ink-3)" }}>
-                  Enlaces
+                  {t("Enlaces", "Links")}
                 </div>
                 <div className="flex flex-col gap-2">
                   {project.details.links.map((l) =>
@@ -1511,14 +1707,14 @@ function ProjectModal({ project, onClose }) {
             {project.store && (
               <div className="mt-12 pt-6" style={{ borderTop: "1px solid var(--line)" }}>
                 <div className="text-[11px] font-mono tracking-[0.14em] uppercase mb-4" style={{ color: "var(--ink-3)" }}>
-                  Disponible en
+                  {t("Disponible en", "Available on")}
                 </div>
                 <StoreButtons store={project.store} size="lg" />
               </div>
             )}
 
             <div className="mt-10 pt-6 text-[12px] font-mono tracking-[0.14em] uppercase" style={{ color: "var(--ink-3)", borderTop: "1px solid var(--line)" }}>
-              Caso de estudio
+              {t("Caso de estudio", "Case study")}
             </div>
           </div> :
 
@@ -1527,7 +1723,7 @@ function ProjectModal({ project, onClose }) {
               {project.desc}
             </p>
             <div className="mt-10 pt-6 text-[13px] font-mono tracking-[0.14em] uppercase" style={{ color: "var(--ink-3)", borderTop: "1px solid var(--line)" }}>
-              Detalles próximamente
+              {t("Detalles próximamente", "Details coming soon")}
             </div>
           </div>
         }
@@ -1550,18 +1746,21 @@ function waitForPdfjs() {
 }
 
 function CertModal({ cert, onClose }) {
+  const t = useT();
   const containerRef = useRef(null);
+  // El PDF sólo se vuelve a renderizar si cambia el fichero, no al cambiar de idioma
+  const file = cert ? cert.file : null;
   const [state, setState] = useState("idle"); // idle | loading | done | error
 
   useEffect(() => {
-    if (!cert) { setState("idle"); return; }
+    if (!file) { setState("idle"); return; }
     let cancelled = false;
     setState("loading");
 
     (async () => {
       try {
         const pdfjs = await waitForPdfjs();
-        const r = await fetch(cert.file);
+        const r = await fetch(file);
         const buf = new Uint8Array(await r.arrayBuffer());
         if (cancelled) return;
         const doc = await pdfjs.getDocument({ data: buf }).promise;
@@ -1606,10 +1805,10 @@ function CertModal({ cert, onClose }) {
     })();
 
     return () => { cancelled = true; };
-  }, [cert]);
+  }, [file]);
 
   useEffect(() => {
-    if (!cert) return;
+    if (!file) return;
     document.body.classList.add("modal-open");
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
@@ -1617,7 +1816,7 @@ function CertModal({ cert, onClose }) {
       document.body.classList.remove("modal-open");
       window.removeEventListener("keydown", onKey);
     };
-  }, [cert, onClose]);
+  }, [file, onClose]);
 
   if (!cert) return null;
 
@@ -1628,7 +1827,7 @@ function CertModal({ cert, onClose }) {
       role="dialog"
       aria-modal="true">
       <div className="modal-card" style={{ maxWidth: "920px" }}>
-        <button className="modal-close" onClick={onClose} aria-label="Cerrar">
+        <button className="modal-close" onClick={onClose} aria-label={t("Cerrar", "Close")}>
           <Icon name="x" size={18} strokeWidth={1.75} />
         </button>
 
@@ -1640,7 +1839,7 @@ function CertModal({ cert, onClose }) {
           </div>
           <div className="min-w-0 pt-1">
             <div className="text-[11px] tracking-[0.16em] uppercase font-mono mb-1.5" style={{ color: "var(--ink-3)" }}>
-              Diploma · {cert.date}{cert.hours ? " · " + cert.hours : ""}
+              {t("Diploma", "Certificate")} · {cert.date}{cert.hours ? " · " + cert.hours : ""}
             </div>
             <h3 className="text-[22px] md:text-[26px] font-medium tracking-[-0.02em] leading-[1.15]">
               {cert.title}
@@ -1659,7 +1858,7 @@ function CertModal({ cert, onClose }) {
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ color: "var(--ink-3)" }}>
             <div className="flex items-center gap-2 text-[12.5px] tracking-[0.14em] uppercase font-mono">
               <span className="cert-spinner" />
-              Cargando diploma…
+              {t("Cargando diploma…", "Loading certificate…")}
             </div>
           </div>
           }
@@ -1667,7 +1866,7 @@ function CertModal({ cert, onClose }) {
           <div className="absolute inset-0 flex items-center justify-center" style={{ color: "var(--ink-3)" }}>
             <div className="flex flex-col items-center gap-3 text-center text-[13px]" style={{ color: "var(--ink-2)" }}>
               <Icon name="alert-circle" size={20} strokeWidth={1.5} />
-              <div>No se pudo previsualizar. Descarga el PDF abajo.</div>
+              <div>{t("No se pudo previsualizar. Descarga el PDF abajo.", "Preview unavailable. Download the PDF below.")}</div>
             </div>
           </div>
           }
@@ -1687,14 +1886,15 @@ function CertModal({ cert, onClose }) {
             className="inline-flex items-center gap-2 px-4 py-2 text-[13px] btn-primary"
             style={{ textDecoration: "none" }}>
             <Icon name="download" size={14} strokeWidth={1.75} />
-            Descargar PDF
+            {t("Descargar PDF", "Download PDF")}
           </a>
         </div>
       </div>
     </div>);
 }
 
-function Skills({ tweaks, onOpenCert }) {
+function Skills({ certs, stack, tweaks, onOpenCert }) {
+  const t = useT();
   return (
     <section id="skills" className="relative">
       <Blob top={80} right={-200} size={[340, 320]} color="#FFC79A" shape={3} />
@@ -1703,13 +1903,16 @@ function Skills({ tweaks, onOpenCert }) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16">
           <Reveal className="md:col-span-3">
             <div className={`text-[11px] tracking-[0.16em] uppercase mb-3 ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
-              03 — Formación
+              {t("03 — Formación", "03 — Education")}
             </div>
             <h2 className="text-[28px] md:text-[36px] tracking-[-0.02em] font-medium leading-[1.1]">
-              Lo que respalda<br/>lo que sé hacer.
+              {t("Lo que respalda", "What backs up")}<br/>{t("lo que sé hacer.", "what I can do.")}
             </h2>
             <p className="mt-5 text-[15px] leading-[1.6]" style={{ color: "var(--ink-2)" }}>
-              Diplomas que voy reuniendo a lo largo de la carrera, junto con el stack que toco a diario.
+              {t(
+                "Diplomas que voy reuniendo a lo largo de la carrera, junto con el stack que toco a diario.",
+                "Certificates I've been collecting throughout my degree, along with the stack I use every day."
+              )}
             </p>
           </Reveal>
 
@@ -1718,18 +1921,18 @@ function Skills({ tweaks, onOpenCert }) {
             <div>
               <div className="flex items-baseline justify-between mb-5">
                 <div className={`text-[11px] tracking-[0.14em] uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
-                  Diplomas
+                  {t("Diplomas", "Certificates")}
                 </div>
                 <div className={`text-[11px] tracking-[0.14em] uppercase ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
-                  - hasta la fecha
+                  {t("- hasta la fecha", "- to date")}
                 </div>
               </div>
               <div className="space-y-3">
-                {CERTS.map((c, i) =>
-                <Reveal key={c.title} delay={0.05 + i * 0.08}>
+                {certs.map((c, i) =>
+                <Reveal key={c.file} delay={0.05 + i * 0.08}>
                   <button
                     type="button"
-                    onClick={() => onOpenCert && onOpenCert(c)}
+                    onClick={() => onOpenCert && onOpenCert(i)}
                     className="card group rounded-[24px] p-5 md:p-6 flex items-start gap-5 md:gap-6 w-full text-left"
                     style={{ color: "inherit", textDecoration: "none", background: "var(--bg-elev)" }}>
                   
@@ -1785,11 +1988,11 @@ function Skills({ tweaks, onOpenCert }) {
             {/* Stack habitual */}
             <div>
               <div className={`text-[11px] tracking-[0.14em] uppercase mb-5 ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
-                Stack habitual
+                {t("Stack habitual", "Everyday stack")}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-7">
-                {STACK.map((g, i) =>
-                <Reveal key={g.group} delay={0.05 + i * 0.06}>
+                {stack.map((g, i) =>
+                <Reveal key={i} delay={0.05 + i * 0.06}>
                   <div>
                     <div className="text-[13.5px] font-medium mb-2.5" style={{ color: "var(--ink)" }}>
                       {g.group}
@@ -1821,6 +2024,7 @@ function Skills({ tweaks, onOpenCert }) {
 }
 
 function ContactEmail({ email }) {
+  const t = useT();
   const [copied, setCopied] = React.useState(false);
   const timerRef = useRef(null);
 
@@ -1856,7 +2060,7 @@ function ContactEmail({ email }) {
           color: "var(--ink-3)",
           opacity: copied ? 1 : 0
         }}>
-        Copiado
+        {t("Copiado", "Copied")}
       </span>
     </div>);
 
@@ -1864,6 +2068,7 @@ function ContactEmail({ email }) {
 
 function Footer({ tweaks }) {
   const accent = ACCENTS[tweaks.accent];
+  const t = useT();
   return (
     <footer id="contact" className="relative">
       <Blob bottom={-80} right={-200} size={[480, 440]} color="#FFB87A" shape={4} />
@@ -1871,12 +2076,12 @@ function Footer({ tweaks }) {
       <div className="relative z-10 max-w-[1100px] mx-auto px-6 md:px-10 pt-24 md:pt-32 pb-12">
         <Reveal>
         <div className={`text-[11px] tracking-[0.16em] uppercase mb-3 ${tweaks.monoCaptions ? "font-mono" : ""}`} style={{ color: "var(--ink-3)" }}>
-          04 — Contacto
+          {t("04 — Contacto", "04 — Contact")}
         </div>
 
         <h2 className="text-[36px] md:text-[64px] leading-[1.02] tracking-[-0.02em] font-medium max-w-[820px]">
-          Aún estoy empezando.
-          <br className="hidden md:block" /> <span style={{ color: "var(--ink-2)" }}>Si crees que podemos cruzarnos en algo, escríbeme.</span>
+          {t("Aún estoy empezando.", "I'm just getting started.")}
+          <br className="hidden md:block" /> <span style={{ color: "var(--ink-2)" }}>{t("Si crees que podemos cruzarnos en algo, escríbeme.", "If you think our paths could cross, drop me a line.")}</span>
         </h2>
 
         <ContactEmail email="hugofernandezgil17@gmail.com" />
@@ -1897,7 +2102,7 @@ function Footer({ tweaks }) {
           <div className="flex items-center gap-1">
             {[
             { name: "github", label: "GitHub", href: "https://github.com/HugoFernandezz" },
-            { name: "mail", label: "Correo", href: "mailto:hugofernandezgil17@gmail.com" }].
+            { name: "mail", label: t("Correo", "Email"), href: "mailto:hugofernandezgil17@gmail.com" }].
             map((l) =>
             <a
               key={l.label}
@@ -2034,8 +2239,19 @@ function TweaksUI({ tweaks, setTweak }) {
 function App() {
   const useTweaks = window.useTweaks;
   const [tweaks, setTweak] = useTweaks ? useTweaks(TWEAK_DEFAULTS) : [TWEAK_DEFAULTS, () => {}];
-  const [openProject, setOpenProject] = useState(null);
-  const [openCert, setOpenCert] = useState(null);
+  const [openProject, setOpenProject] = useState(null); // índice en PROJECTS
+  const [openCert, setOpenCert] = useState(null); // índice en CERTS
+  const [lang, setLang] = useState(getInitialLang);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    try { localStorage.setItem("lang", lang); } catch {}
+  }, [lang]);
+
+  const projects = React.useMemo(() => localize(PROJECTS, lang), [lang]);
+  const certs = React.useMemo(() => localize(CERTS, lang), [lang]);
+  const stack = React.useMemo(() => localize(STACK, lang), [lang]);
+  const langValue = React.useMemo(() => ({ lang, setLang }), [lang]);
 
   // Push accent vars to :root
   useEffect(() => {
@@ -2085,6 +2301,7 @@ function App() {
   const dense = tweaks.density === "compact";
 
   return (
+    <LangContext.Provider value={langValue}>
     <MotionProvider tweaks={tweaks}>
       <div className={dense ? "density-compact" : "density-comfortable"}>
         <TopNav accent={tweaks.accent} />
@@ -2092,16 +2309,17 @@ function App() {
         <div className="max-w-[1100px] mx-auto px-6 md:px-10 relative z-10"><div className="rule" /></div>
         <About tweaks={tweaks} />
         <div className="max-w-[1100px] mx-auto px-6 md:px-10 relative z-10"><div className="rule" /></div>
-        <Projects tweaks={tweaks} onOpen={setOpenProject} />
+        <Projects projects={projects} tweaks={tweaks} onOpen={setOpenProject} />
         <div className="max-w-[1100px] mx-auto px-6 md:px-10 relative z-10"><div className="rule" /></div>
-        <Skills tweaks={tweaks} onOpenCert={setOpenCert} />
+        <Skills certs={certs} stack={stack} tweaks={tweaks} onOpenCert={setOpenCert} />
         <div className="max-w-[1100px] mx-auto px-6 md:px-10 relative z-10"><div className="rule" /></div>
         <Footer tweaks={tweaks} />
         <TweaksUI tweaks={tweaks} setTweak={setTweak} />
-        <ProjectModal project={openProject} onClose={() => setOpenProject(null)} />
-        <CertModal cert={openCert} onClose={() => setOpenCert(null)} />
+        <ProjectModal project={openProject != null ? projects[openProject] : null} onClose={() => setOpenProject(null)} />
+        <CertModal cert={openCert != null ? certs[openCert] : null} onClose={() => setOpenCert(null)} />
       </div>
-    </MotionProvider>);
+    </MotionProvider>
+    </LangContext.Provider>);
 
 }
 
